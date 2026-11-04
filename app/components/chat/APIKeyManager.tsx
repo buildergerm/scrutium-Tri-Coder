@@ -12,7 +12,8 @@ interface APIKeyManagerProps {
 }
 
 // cache which stores whether the provider's API key is set via environment variable
-const providerEnvKeyStatusCache: Record<string, boolean> = {};
+const providerEnvKeyStatusCache: Record<string, { isSet: boolean; checkedAt: number }> = {};
+const ENV_STATUS_CACHE_TTL_MS = 15_000;
 
 const apiKeyMemoizeCache: { [k: string]: Record<string, string> } = {};
 
@@ -50,19 +51,31 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
   }, [provider.name]);
 
   const checkEnvApiKey = useCallback(async () => {
-    // Check cache first
-    if (providerEnvKeyStatusCache[provider.name] !== undefined) {
-      setIsEnvKeySet(providerEnvKeyStatusCache[provider.name]);
+    // Only use a short-lived positive cache. A negative result must be
+    // retried because Worker secrets can be added without a browser reload.
+    const cached = providerEnvKeyStatusCache[provider.name];
+    if (cached?.isSet && Date.now() - cached.checkedAt < ENV_STATUS_CACHE_TTL_MS) {
+      setIsEnvKeySet(true);
       return;
     }
+    setIsEnvKeySet(false);
 
     try {
-      const response = await fetch(`/api/check-env-key?provider=${encodeURIComponent(provider.name)}`, { cache: 'no-store' });
-      const data = await response.json();
-      const isSet = (data as { isSet: boolean }).isSet;
+      const response = await fetch(`/api/check-env-key?provider=${encodeURIComponent(provider.name)}`, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`Environment key check failed (${response.status})`);
+      }
+      const data = (await response.json()) as { isSet?: boolean };
+      const isSet = data.isSet === true;
 
-      // Cache the result
-      providerEnvKeyStatusCache[provider.name] = isSet;
+      if (isSet) {
+        providerEnvKeyStatusCache[provider.name] = { isSet: true, checkedAt: Date.now() };
+      } else {
+        delete providerEnvKeyStatusCache[provider.name];
+      }
       setIsEnvKeySet(isSet);
     } catch (error) {
       console.error('Failed to check environment API key:', error);
