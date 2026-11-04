@@ -12,16 +12,22 @@ export function getApiTokenEnvKeys(primaryKey?: string): string[] {
   return [...new Set([primaryKey, ...(API_TOKEN_ENV_ALIASES[primaryKey] ?? [])])];
 }
 
-/** Read a server-owned token without ever returning it to client-facing routes. */
+/** Resolve the same environment-first credential precedence used by BaseProvider. */
 export function getServerApiToken(
   primaryKey: string | undefined,
   ...environments: Array<Record<string, unknown> | undefined>
 ): string | undefined {
-  for (const key of getApiTokenEnvKeys(primaryKey)) {
-    for (const environment of environments) {
+  const keys = getApiTokenEnvKeys(primaryKey);
+
+  for (const environment of environments) {
+    for (const key of keys) {
       const value = environment?.[key];
-      if (typeof value === 'string' && value.trim().length > 0) return value;
+
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value;
+      }
     }
   }
+
   return undefined;
 }
