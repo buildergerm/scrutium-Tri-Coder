@@ -15,7 +15,7 @@ describe('server-managed provider credential check', () => {
   });
 
   it('reports a Cloudflare Worker secret as an environment credential', async () => {
-    const response = await loader({
+    const response = (await loader({
       request: new Request('https://example.test/api/check-env-key?provider=OpenRouter', {
         headers: { Cookie: 'apiKeys=%7B%22OpenRouter%22%3A%22personal-cookie-key%22%7D' },
       }),
