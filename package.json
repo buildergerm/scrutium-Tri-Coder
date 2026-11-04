@@ -1,14 +1,13 @@
 {
-  "name": "bolt",
-  "description": "An AI Agent",
+  "name": "tri-coder",
+  "description": "Tri-Coder — AI-powered full-stack development workspace",
   "private": true,
   "license": "MIT",
   "sideEffects": false,
   "type": "module",
   "version": "1.0.0",
   "author": {
-    "name": "bolt.diy team",
-    "email": "maintainers@bolt.diy"
+    "name": "Tri-Coder contributors"
   },
   "scripts": {
     "deploy": "pnpm run build && wrangler deploy",
@@ -35,9 +34,9 @@
     "lint:fix": "npm run lint -- --fix && prettier app --write",
     "start": "vite preview --host :: --port 5173 --strictPort",
     "dockerstart": "vite preview --host 0.0.0.0 --port 5173 --strictPort",
-    "dockerrun": "docker run -it -d --name bolt-ai-live -p 5173:5173 --env-file .env.local bolt-ai",
-    "dockerbuild:prod": "docker build -t bolt-ai:production -t bolt-ai:latest --target bolt-ai-production .",
-    "dockerbuild": "docker build -t bolt-ai:development -t bolt-ai:latest --target development .",
+    "dockerrun": "docker run -it -d --name tri-coder-live -p 5173:5173 --env-file .env.local tri-coder",
+    "dockerbuild:prod": "docker build -t tri-coder:production -t tri-coder:latest --target tri-coder-production .",
+    "dockerbuild": "docker build -t tri-coder:development -t tri-coder:latest --target development .",
     "typecheck": "tsc",
     "update:ripgrep-wasm": "node scripts/update-ripgrep-wasm.mjs",
     "typegen": "wrangler types",
