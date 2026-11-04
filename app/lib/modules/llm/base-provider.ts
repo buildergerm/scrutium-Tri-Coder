@@ -7,6 +7,16 @@ import type { IProviderSetting } from '~/types/model';
 /** Default timeout for model listing API calls (5 seconds) */
 const MODEL_FETCH_TIMEOUT = 5_000;
 
+/**
+ * Cloudflare secret names used by deployed Scrutium Workers. Keep provider
+ * package defaults as fallbacks so local development and browser-key users
+ * remain compatible.
+ */
+const API_TOKEN_ENV_ALIASES: Record<string, string[]> = {
+  GOOGLE_GENERATIVE_AI_API_KEY: ['GEMINI_API_KEY'],
+  OPEN_ROUTER_API_KEY: ['OPENROUTER_API_KEY'],
+};
+
 export abstract class BaseProvider implements ProviderInfo {
   abstract name: string;
   abstract staticModels: ModelInfo[];
@@ -93,9 +103,15 @@ export abstract class BaseProvider implements ProviderInfo {
     }
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
+    const apiTokenKeys = [apiTokenKey, ...(API_TOKEN_ENV_ALIASES[apiTokenKey] || [])].filter(Boolean);
+    const serverApiKey = apiTokenKeys.map((key) => serverEnv?.[key]).find((value) => Boolean(value?.trim()));
+    const processApiKey = apiTokenKeys.map((key) => process?.env?.[key]).find((value) => Boolean(value?.trim()));
+    const managerApiKey = apiTokenKeys.map((key) => managerEnv?.[key]).find((value) => Boolean(value?.trim()));
 
-    const apiKey =
-      apiKeys?.[this.name] || serverEnv?.[apiTokenKey] || process?.env?.[apiTokenKey] || managerEnv?.[apiTokenKey];
+    // Worker secrets are server-owned credentials and must win over any
+    // browser-supplied key. Browser keys remain a fallback for non-Cloudflare
+    // deployments and users who have not configured a Worker secret.
+    const apiKey = serverApiKey || processApiKey || managerApiKey || apiKeys?.[this.name];
 
     return {
       baseUrl,
@@ -128,7 +144,12 @@ export abstract class BaseProvider implements ProviderInfo {
     serverEnv?: Record<string, string>;
   }) {
     // Only include provider-relevant env keys, not the entire server environment
-    const relevantEnvKeys = [this.config.baseUrlKey, this.config.apiTokenKey].filter(Boolean) as string[];
+    const configuredTokenKey = this.config.apiTokenKey;
+    const relevantEnvKeys = [
+      this.config.baseUrlKey,
+      configuredTokenKey,
+      ...(configuredTokenKey ? API_TOKEN_ENV_ALIASES[configuredTokenKey] || [] : []),
+    ].filter(Boolean) as string[];
     const relevantEnv: Record<string, string> = {};
 
     for (const key of relevantEnvKeys) {
