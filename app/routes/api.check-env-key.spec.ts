@@ -11,11 +11,11 @@ describe('server-managed provider credential check', () => {
       params: {},
     } as any)) as Response;
 
-    await expect(response.json()).resolves.toEqual({ isSet: false, source: 'none' });
+    await expect(response.json()).resolves.toMatchObject({ isSet: false, source: 'none' });
   });
 
-  it('reports a Cloudflare Worker secret as an environment credential', async () => {
-    const response = await loader({
+  it('detects the canonical OpenRouter Worker secret even when a browser key is present', async () => {
+    const response = (await loader({
       request: new Request('https://example.test/api/check-env-key?provider=OpenRouter', {
         headers: { Cookie: 'apiKeys=%7B%22OpenRouter%22%3A%22personal-cookie-key%22%7D' },
       }),
@@ -23,7 +23,21 @@ describe('server-managed provider credential check', () => {
       params: {},
     } as any)) as Response;
 
-    await expect(response.json()).resolves.toEqual({ isSet: true, source: 'environment' });
+    await expect(response.json()).resolves.toMatchObject({
+      isSet: true,
+      source: 'environment',
+      reason: 'server_credential_found',
+    });
     expect(response.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('detects the OpenRouter alias used by Cloudflare deployments', async () => {
+    const response = (await loader({
+      request: new Request('https://example.test/api/check-env-key?provider=OpenRouter'),
+      context: { cloudflare: { env: { OPENROUTER_API_KEY: 'worker-alias-secret' } } },
+      params: {},
+    } as any)) as Response;
+
+    await expect(response.json()).resolves.toMatchObject({ isSet: true, source: 'environment' });
   });
 });
