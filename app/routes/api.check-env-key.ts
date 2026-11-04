@@ -17,7 +17,7 @@ export const loader: LoaderFunction = async ({ context, request }) => {
     );
   }
 
-  const cloudflareEnv = context?.cloudflare?.env as Record<string, unknown> | undefined;
+  const cloudflareEnv = context?.cloudflare?.env as unknown as Record<string, unknown> | undefined;
   const llmManager = LLMManager.getInstance(cloudflareEnv as Record<string, string> | undefined);
   const provider = llmManager.getProvider(providerName);
 
