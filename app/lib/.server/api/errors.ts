@@ -134,9 +134,23 @@ export function toSafeStreamErrorMessage(error: unknown): string {
   const normalizedMessage = providerMessage.toLowerCase();
 
   const statusCode =
-    typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode : undefined;
+    typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode :
+    typeof error === 'object' && error !== null && 'status' in error ? error.status : undefined;
+  const errorCode =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : undefined;
 
-  logger.error(`Streaming provider error (${error instanceof Error ? error.name : 'UnknownError'})`);
+  // Log actionable provider metadata without logging messages, headers, URLs,
+  // request bodies, or credentials that may be embedded in SDK errors.
+  logger.error(
+    'Streaming provider error metadata',
+    JSON.stringify({
+      name: error instanceof Error ? error.name : 'UnknownError',
+      statusCode: typeof statusCode === 'number' ? statusCode : undefined,
+      code: errorCode,
+    }),
+  );
 
   if ((error instanceof Error && error.name === 'TimeoutError') || /timeout|timed\s*out/.test(normalizedMessage)) {
     return 'Custom error: The AI provider stopped responding before the next step completed. Completed file changes and tool results are preserved. Retry to continue, or select a different model.';
@@ -163,9 +177,11 @@ export function toSafeStreamErrorMessage(error: unknown): string {
   }
 
   if (
-    providerMessage.includes('API key') ||
-    providerMessage.includes('unauthorized') ||
-    providerMessage.includes('authentication')
+    statusCode === 401 ||
+    statusCode === 403 ||
+    providerMessage.toLowerCase().includes('api key') ||
+    normalizedMessage.includes('unauthorized') ||
+    normalizedMessage.includes('authentication')
   ) {
     return 'Custom error: Invalid or missing API key. Please check your API key configuration.';
   }
@@ -174,11 +190,20 @@ export function toSafeStreamErrorMessage(error: unknown): string {
     return 'Custom error: Token limit exceeded. The conversation is too long for the selected model. Try using a model with larger context window or start a new conversation.';
   }
 
+  if (statusCode === 402 || normalizedMessage.includes('insufficient_quota') || normalizedMessage.includes('quota')) {
+    return 'Custom error: The provider account has insufficient credits or quota. Check billing and usage limits for the selected provider.';
+  }
+
   if (statusCode === 429 || normalizedMessage.includes('rate limit') || providerMessage.includes('429')) {
     return 'Custom error: API rate limit exceeded, or the provider rejected the request for account reasons. Check your provider account and try again.';
   }
 
-  if (providerMessage.includes('network') || providerMessage.includes('timeout')) {
+  if (
+    (typeof statusCode === 'number' && statusCode >= 500) ||
+    normalizedMessage.includes('network') ||
+    normalizedMessage.includes('fetch failed') ||
+    normalizedMessage.includes('timeout')
+  ) {
     return 'Custom error: Network error. Please check your internet connection and try again.';
   }
 

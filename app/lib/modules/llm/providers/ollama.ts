@@ -35,6 +35,7 @@ export default class OllamaProvider extends BaseProvider {
 
   config = {
     baseUrlKey: 'OLLAMA_API_BASE_URL',
+    apiTokenKey: 'OLLAMA_API_KEY',
   };
 
   staticModels: ModelInfo[] = [];
@@ -72,10 +73,18 @@ export default class OllamaProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
+    const { apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
+      defaultApiTokenKey: 'OLLAMA_API_KEY',
+    });
     const baseUrl = this._resolveBaseUrl(apiKeys, settings, serverEnv);
 
     try {
       const response = await fetch(`${baseUrl}/api/tags`, {
+        headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
         signal: this.createTimeoutSignal(),
       });
 
@@ -119,12 +128,21 @@ export default class OllamaProvider extends BaseProvider {
     const { apiKeys, providerSettings, serverEnv, model } = options;
     const envRecord = this.convertEnvToRecord(serverEnv);
 
-    const baseUrl = this._resolveBaseUrl(apiKeys, providerSettings?.[this.name], envRecord);
+    const settings = providerSettings?.[this.name];
+    const { apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv: envRecord,
+      defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
+      defaultApiTokenKey: 'OLLAMA_API_KEY',
+    });
+    const baseUrl = this._resolveBaseUrl(apiKeys, settings, envRecord);
 
     logger.debug('Ollama Base Url used: ', baseUrl);
 
     const ollamaProvider = createOllama({
       baseURL: `${baseUrl}/api`,
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
     });
 
     /*
