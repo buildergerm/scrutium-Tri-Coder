@@ -103,6 +103,7 @@ export abstract class BaseProvider implements ProviderInfo {
     }
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
+
     const apiTokenKeys = [apiTokenKey, ...(API_TOKEN_ENV_ALIASES[apiTokenKey] || [])].filter(Boolean);
     const serverApiKey = apiTokenKeys.map((key) => serverEnv?.[key]).find((value) => Boolean(value?.trim()));
     const processApiKey = apiTokenKeys.map((key) => process?.env?.[key]).find((value) => Boolean(value?.trim()));
