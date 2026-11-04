@@ -40,8 +40,9 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
   const [isEnvKeySet, setIsEnvKeySet] = useState(false);
 
   useEffect(() => {
+    const serverManaged = providerEnvKeyStatusCache[provider.name]?.isSet === true;
     const savedKeys = getApiKeysFromCookies();
-    const savedKey = savedKeys[provider.name] || '';
+    const savedKey = serverManaged ? '' : savedKeys[provider.name] || '';
     setTempKey(savedKey);
     setApiKey(savedKey);
     setIsEditing(false);
