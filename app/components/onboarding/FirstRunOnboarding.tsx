@@ -7,7 +7,7 @@ import { DEFAULT_AVATARS, DEFAULT_AVATAR, updateProfile } from '~/lib/stores/pro
 import { setTheme, themeStore } from '~/lib/stores/theme';
 import { THEMES, type Theme } from '~/types/theme';
 
-const COMPLETED_KEY = 'tricoder_onboarding_completed';
+const COMPLETED_KEY = 'bolt_onboarding_completed';
 const EMPTY_MCP_CONFIG = { mcpServers: {} };
 
 export function FirstRunOnboarding() {
