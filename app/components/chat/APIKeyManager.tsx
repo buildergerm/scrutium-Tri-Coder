@@ -57,7 +57,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
     }
 
     try {
-      const response = await fetch(`/api/check-env-key?provider=${encodeURIComponent(provider.name)}`);
+      const response = await fetch(`/api/check-env-key?provider=${encodeURIComponent(provider.name)}`, { cache: 'no-store' });
       const data = await response.json();
       const isSet = (data as { isSet: boolean }).isSet;
 
@@ -143,16 +143,16 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
           </div>
         ) : (
           <>
-            {
+            {!isEnvKeySet && (
               <IconButton
                 onClick={() => setIsEditing(true)}
-                title="Edit API Key"
+                title="Add API Key"
                 className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500"
               >
                 <div className="i-ph:pencil-simple w-4 h-4" />
               </IconButton>
-            }
-            {provider?.getApiKeyLink && !apiKey && (
+            )}
+            {provider?.getApiKeyLink && !apiKey && !isEnvKeySet && (
               <IconButton
                 onClick={() => window.open(provider?.getApiKeyLink)}
                 title="Get API Key"
