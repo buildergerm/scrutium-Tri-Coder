@@ -109,9 +109,11 @@ export abstract class BaseProvider implements ProviderInfo {
     const processApiKey = apiTokenKeys.map((key) => process?.env?.[key]).find((value) => Boolean(value?.trim()));
     const managerApiKey = apiTokenKeys.map((key) => managerEnv?.[key]).find((value) => Boolean(value?.trim()));
 
-    // Worker secrets are server-owned credentials and must win over any
-    // browser-supplied key. Browser keys remain a fallback for non-Cloudflare
-    // deployments and users who have not configured a Worker secret.
+    /*
+     * Worker secrets are server-owned credentials and must win over any
+     * browser-supplied key. Browser keys remain a fallback for non-Cloudflare
+     * deployments and users who have not configured a Worker secret.
+     */
     const apiKey = serverApiKey || processApiKey || managerApiKey || apiKeys?.[this.name];
 
     return {
@@ -146,11 +148,13 @@ export abstract class BaseProvider implements ProviderInfo {
   }) {
     // Only include provider-relevant env keys, not the entire server environment
     const configuredTokenKey = this.config.apiTokenKey;
+
     const relevantEnvKeys = [
       this.config.baseUrlKey,
       configuredTokenKey,
       ...(configuredTokenKey ? API_TOKEN_ENV_ALIASES[configuredTokenKey] || [] : []),
     ].filter(Boolean) as string[];
+
     const relevantEnv: Record<string, string> = {};
 
     for (const key of relevantEnvKeys) {

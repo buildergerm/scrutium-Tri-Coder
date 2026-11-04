@@ -11,10 +11,7 @@ class CredentialTestProvider extends BaseProvider {
     throw new Error('not implemented');
   }
 
-  resolveCredentials(options: {
-    apiKeys?: Record<string, string>;
-    serverEnv?: Record<string, string>;
-  }) {
+  resolveCredentials(options: { apiKeys?: Record<string, string>; serverEnv?: Record<string, string> }) {
     return this.getProviderBaseUrlAndKey({
       ...options,
       defaultBaseUrlKey: '',
