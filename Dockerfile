@@ -26,7 +26,7 @@ COPY . .
 # install with dev deps (needed to build)
 RUN pnpm install --offline --frozen-lockfile
 
-# Build the Remix app (SSR + client)
+# Build the React Router app (SSR + client)
 RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm run build
 
 # ---- production dependencies stage ----
@@ -37,7 +37,7 @@ RUN pnpm prune --prod --ignore-scripts
 
 
 # ---- production stage ----
-FROM prod-deps AS bolt-ai-production
+FROM prod-deps AS tri-coder-production
 WORKDIR /app
 
 ENV NODE_ENV=production
