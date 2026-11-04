@@ -1,21 +1,12 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 import { getEnv } from './env';
+import { getApiTokenEnvKeys } from './api-token-env';
 import type { ProviderInfo, ProviderConfig, ModelInfo } from './types';
 import type { IProviderSetting } from '~/types/model';
 
 /** Default timeout for model listing API calls (5 seconds) */
 const MODEL_FETCH_TIMEOUT = 5_000;
-
-/**
- * Cloudflare secret names used by deployed Scrutium Workers. Keep provider
- * package defaults as fallbacks so local development and browser-key users
- * remain compatible.
- */
-const API_TOKEN_ENV_ALIASES: Record<string, string[]> = {
-  GOOGLE_GENERATIVE_AI_API_KEY: ['GEMINI_API_KEY'],
-  OPEN_ROUTER_API_KEY: ['OPENROUTER_API_KEY'],
-};
 
 export abstract class BaseProvider implements ProviderInfo {
   abstract name: string;
@@ -104,7 +95,7 @@ export abstract class BaseProvider implements ProviderInfo {
 
     const apiTokenKey = this.config.apiTokenKey || defaultApiTokenKey;
 
-    const apiTokenKeys = [apiTokenKey, ...(API_TOKEN_ENV_ALIASES[apiTokenKey] || [])].filter(Boolean);
+    const apiTokenKeys = getApiTokenEnvKeys(apiTokenKey);
     const serverApiKey = apiTokenKeys.map((key) => serverEnv?.[key]).find((value) => Boolean(value?.trim()));
     const processApiKey = apiTokenKeys.map((key) => process?.env?.[key]).find((value) => Boolean(value?.trim()));
     const managerApiKey = apiTokenKeys.map((key) => managerEnv?.[key]).find((value) => Boolean(value?.trim()));
@@ -152,7 +143,7 @@ export abstract class BaseProvider implements ProviderInfo {
     const relevantEnvKeys = [
       this.config.baseUrlKey,
       configuredTokenKey,
-      ...(configuredTokenKey ? API_TOKEN_ENV_ALIASES[configuredTokenKey] || [] : []),
+      ...(configuredTokenKey ? getApiTokenEnvKeys(configuredTokenKey).slice(1) : []),
     ].filter(Boolean) as string[];
 
     const relevantEnv: Record<string, string> = {};

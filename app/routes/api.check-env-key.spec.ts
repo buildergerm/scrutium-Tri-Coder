@@ -41,3 +41,26 @@ describe('server-managed provider credential check', () => {
     await expect(response.json()).resolves.toMatchObject({ isSet: true, source: 'environment' });
   });
 });
+
+
+describe('provider credential environment aliases', () => {
+  it('supports runtime env bindings supplied directly on the route context', async () => {
+    const response = (await loader({
+      request: new Request('https://example.test/api/check-env-key?provider=OpenRouter'),
+      context: { env: { OPENROUTER_API_KEY: 'worker-alias-secret' } },
+      params: {},
+    } as any)) as Response;
+
+    await expect(response.json()).resolves.toMatchObject({ isSet: true, source: 'environment' });
+  });
+
+  it('does not treat whitespace-only bindings as configured credentials', async () => {
+    const response = (await loader({
+      request: new Request('https://example.test/api/check-env-key?provider=OpenRouter'),
+      context: { cloudflare: { env: { OPEN_ROUTER_API_KEY: '   ' } } },
+      params: {},
+    } as any)) as Response;
+
+    await expect(response.json()).resolves.toMatchObject({ isSet: false, source: 'none' });
+  });
+});
