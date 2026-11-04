@@ -7,8 +7,7 @@
   "type": "module",
   "version": "1.0.0",
   "author": {
-    "name": "Tri-Coder contributors",
-    "email": "maintainers@scrutium.dev"
+    "name": "Tri-Coder contributors"
   },
   "scripts": {
     "deploy": "pnpm run build && wrangler deploy",
