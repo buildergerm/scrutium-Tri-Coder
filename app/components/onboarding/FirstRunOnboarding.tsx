@@ -1,16 +1,13 @@
-import Cookies from 'js-cookie';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
-import { API_KEYS_UPDATED_EVENT, type ApiKeysUpdatedDetail } from '~/lib/api/apiKeys';
 import { getAll, openDatabase } from '~/lib/persistence/db';
 import type { MCPConfig } from '~/lib/services/mcpService';
 import { useMCPStore } from '~/lib/stores/mcp';
 import { DEFAULT_AVATARS, DEFAULT_AVATAR, updateProfile } from '~/lib/stores/profile';
 import { setTheme, themeStore } from '~/lib/stores/theme';
 import { THEMES, type Theme } from '~/types/theme';
-import { PROVIDER_LIST } from '~/utils/constants';
 
-const COMPLETED_KEY = 'bolt_onboarding_completed';
+const COMPLETED_KEY = 'tricoder_onboarding_completed';
 const EMPTY_MCP_CONFIG = { mcpServers: {} };
 
 export function FirstRunOnboarding() {
@@ -18,8 +15,6 @@ export function FirstRunOnboarding() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
-  const [providerName, setProviderName] = useState(PROVIDER_LIST[0]?.name ?? '');
-  const [apiKey, setApiKey] = useState('');
   const [mcpText, setMcpText] = useState(JSON.stringify(EMPTY_MCP_CONFIG, null, 2));
   const [selectedTheme, setSelectedTheme] = useState<Theme>(() => themeStore.get());
 
@@ -43,7 +38,7 @@ export function FirstRunOnboarding() {
   const initializeMcp = useMCPStore((store) => store.initialize);
   const updateMcpSettings = useMCPStore((store) => store.updateSettings);
   const mcpInitialized = useMCPStore((store) => store.isInitialized);
-  const stepTitles = useMemo(() => ['Your profile', 'Connect an AI provider', 'MCP servers', 'Appearance'], []);
+  const stepTitles = useMemo(() => ['Your profile', 'MCP servers', 'Appearance'], []);
 
   useEffect(() => {
     let active = true;
@@ -105,26 +100,6 @@ export function FirstRunOnboarding() {
     setOpen(false);
   };
 
-  const saveApiKey = () => {
-    const current = Cookies.get('apiKeys');
-
-    let keys: Record<string, string> = {};
-
-    try {
-      keys = current ? (JSON.parse(current) as Record<string, string>) : {};
-    } catch {
-      keys = {};
-    }
-
-    if (providerName && apiKey.trim()) {
-      const apiKeys = { ...keys, [providerName]: apiKey.trim() };
-      Cookies.set('apiKeys', JSON.stringify(apiKeys), { expires: 365 });
-      window.dispatchEvent(
-        new CustomEvent<ApiKeysUpdatedDetail>(API_KEYS_UPDATED_EVENT, { detail: { apiKeys, providerName } }),
-      );
-    }
-  };
-
   const next = async () => {
     setError('');
 
@@ -135,10 +110,6 @@ export function FirstRunOnboarding() {
     }
 
     if (step === 1) {
-      saveApiKey();
-    }
-
-    if (step === 2) {
       try {
         const config = JSON.parse(mcpText) as MCPConfig;
 
@@ -159,7 +130,7 @@ export function FirstRunOnboarding() {
       setSaving(false);
     }
 
-    if (step === 3) {
+    if (step === 2) {
       setTheme(selectedTheme);
       localStorage.setItem('bolt_interface_options', JSON.stringify(interfaceOptions));
 
@@ -171,7 +142,7 @@ export function FirstRunOnboarding() {
       root.dataset.animatedTransitions = String(interfaceOptions.animatedTransitions);
     }
 
-    if (step >= 3) {
+    if (step >= 2) {
       finish();
     } else {
       setStep((current) => current + 1);
@@ -208,7 +179,7 @@ export function FirstRunOnboarding() {
               />
             ))}
           </div>
-          <DialogTitle className="text-xl font-semibold">Welcome to Bolt</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Welcome to Tri-Coder</DialogTitle>
           <DialogDescription className="mt-1 text-sm !text-[#a09baa]">
             Let’s get your workspace ready. Optional details can be left blank and changed later in Settings.
           </DialogDescription>
@@ -301,42 +272,6 @@ export function FirstRunOnboarding() {
         {step === 1 && (
           <div className="space-y-3">
             <p className="text-sm text-[#a09baa]">
-              Choose a provider and add its API key to start building. You can also skip this and use a locally
-              configured provider.
-            </p>
-            <label className="block text-sm font-medium" htmlFor="onboarding-provider">
-              AI provider
-            </label>
-            <select
-              id="onboarding-provider"
-              value={providerName}
-              onChange={(event) => setProviderName(event.target.value)}
-              className="w-full rounded-md border border-[#302e39] bg-[#121116] px-3 py-2 text-sm text-[#f4f1fa]"
-            >
-              {PROVIDER_LIST.map((provider) => (
-                <option key={provider.name} value={provider.name}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
-            <label className="block text-sm font-medium" htmlFor="onboarding-api-key">
-              API key
-            </label>
-            <input
-              id="onboarding-api-key"
-              type="password"
-              autoComplete="new-password"
-              value={apiKey}
-              onChange={(event) => setApiKey(event.target.value)}
-              placeholder="Paste your API key"
-              className="w-full rounded-md border border-[#302e39] bg-[#121116] px-3 py-2 text-sm text-[#f4f1fa] outline-none focus:border-[#8b5cf6]"
-            />
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-3">
-            <p className="text-sm text-[#a09baa]">
               Add MCP server configuration as JSON. You can leave this empty and set it up later in Settings.
             </p>
             <label className="block text-sm font-medium" htmlFor="onboarding-mcp">
@@ -358,7 +293,7 @@ export function FirstRunOnboarding() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="onboarding-theme">
