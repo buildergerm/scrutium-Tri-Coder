@@ -23,6 +23,9 @@ export interface Shortcuts {
   toggleTerminal: Shortcut;
 }
 
+// Providers that run locally and expose local-provider settings in the UI.
+export const LOCAL_PROVIDERS = ['Ollama', 'LMStudio', 'OpenAILike'];
+
 export const URL_CONFIGURABLE_PROVIDERS = ['Ollama', 'LMStudio', 'OpenAILike'];
 
 export type ProviderSetting = Record<string, IProviderConfig>;
