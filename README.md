@@ -36,7 +36,7 @@ This project builds on the open-source work originally started by [Cole Medin](h
 
 ```bash
 git clone https://github.com/buildergerm/scrutium-Tri-Coder.git
-cd Tri-Coder
+cd scrutium-Tri-Coder
 pnpm install
 ```
 
