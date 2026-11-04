@@ -1,16 +1,16 @@
-# bolt.diy
+# Tri-Coder
 
-[![bolt.diy: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index(1).jpg)](https://bolt.diy)
+[![Tri-Coder: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index(1).jpg)](https://Tri-Coder)
 
-Welcome to **bolt.diy**, the open-source AI developer workspace that lets you select your preferred LLM for every prompt. Build full-stack web applications in the browser with support for 22+ model providers (OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, Ollama, LM Studio, and more), or extend it with any provider supported by the Vercel AI SDK. OpenRouter, Anthropic, OpenAI, and Google are enabled by default; enable and configure other providers in Settings.
+Welcome to **Tri-Coder**, the open-source AI developer workspace that lets you select your preferred LLM for every prompt. Build full-stack web applications in the browser with support for 22+ model providers (OpenAI, Anthropic, Gemini, Groq, xAI, DeepSeek, Ollama, LM Studio, and more), or extend it with any provider supported by the Vercel AI SDK. OpenRouter, Anthropic, OpenAI, and Google are enabled by default; enable and configure other providers in Settings.
 
-[Documentation](https://stackblitz-labs.github.io/bolt.diy/) | [Community Forum](https://thinktank.ottomator.ai) | [FAQ & Troubleshooting](FAQ.md)
+[Documentation](https://stackblitz-labs.github.io/Tri-Coder/) | [Community Forum](https://thinktank.ottomator.ai) | [FAQ & Troubleshooting](FAQ.md)
 
 ---
 
-Also [this pinned post in our community](https://thinktank.ottomator.ai/t/videos-tutorial-helpful-content/3243) has a bunch of incredible resources for running and deploying bolt.diy yourself!
+Also [this pinned post in our community](https://thinktank.ottomator.ai/t/videos-tutorial-helpful-content/3243) has a bunch of incredible resources for running and deploying Tri-Coder yourself!
 
-bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
+Tri-Coder was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
 
 ---
 
@@ -37,8 +37,8 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/stackblitz-labs/bolt.diy.git
-cd bolt.diy
+git clone https://github.com/stackblitz-labs/Tri-Coder.git
+cd Tri-Coder
 pnpm install
 ```
 
@@ -50,7 +50,7 @@ pnpm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-> **Pre-built Desktop Binaries**: Prefer a standalone app? Download binaries for Windows, macOS, and Linux from our [Latest Releases](https://github.com/stackblitz-labs/bolt.diy/releases/latest).
+> **Pre-built Desktop Binaries**: Prefer a standalone app? Download binaries for Windows, macOS, and Linux from our [Latest Releases](https://github.com/stackblitz-labs/Tri-Coder/releases/latest).
 
 ---
 
@@ -75,9 +75,9 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Desktop App (Electron)
 
-bolt.diy is also available as a cross-platform desktop application:
+Tri-Coder is also available as a cross-platform desktop application:
 
-- **Download**: Grab pre-built installers from [Latest Releases](https://github.com/stackblitz-labs/bolt.diy/releases/latest).
+- **Download**: Grab pre-built installers from [Latest Releases](https://github.com/stackblitz-labs/Tri-Coder/releases/latest).
 - **Build from Source**:
   ```bash
   pnpm electron:build:dist
@@ -152,11 +152,11 @@ LMSTUDIO_BASE_URL=http://127.0.0.1:1234
 ## Contributing & Community
 
 - **Contributing**: Contributions are welcome! Read our [Contributing Guide](CONTRIBUTING.md) and [Project Management Guide](./PROJECT.md) to get started.
-- **Troubleshooting & FAQ**: Common errors and setup fixes are documented in our [FAQ](FAQ.md) and [Official Docs](https://stackblitz-labs.github.io/bolt.diy/).
+- **Troubleshooting & FAQ**: Common errors and setup fixes are documented in our [FAQ](FAQ.md) and [Official Docs](https://stackblitz-labs.github.io/Tri-Coder/).
 
 
 ---
 
 ## Licensing
 
-bolt.diy is open-source under the MIT License. It utilizes the [WebContainers API](https://webcontainers.io/enterprise), which has specific commercial licensing terms for enterprise deployment.
+Tri-Coder is open-source under the MIT License. It utilizes the [WebContainers API](https://webcontainers.io/enterprise), which has specific commercial licensing terms for enterprise deployment.
