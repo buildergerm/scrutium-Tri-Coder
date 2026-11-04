@@ -1,5 +1,4 @@
 import type { LoaderFunction } from 'react-router';
-import { getApiKeysFromCookie } from '~/lib/api/cookies';
 import { LLMManager } from '~/lib/modules/llm/manager';
 
 const ENV_KEY_ALIASES: Record<string, string[]> = {
@@ -9,41 +8,37 @@ const ENV_KEY_ALIASES: Record<string, string[]> = {
 
 export const loader: LoaderFunction = async ({ context, request }) => {
   const url = new URL(request.url);
-  const provider = url.searchParams.get('provider');
+  const providerName = url.searchParams.get('provider');
 
-  if (!provider) {
-    return Response.json({ isSet: false });
+  if (!providerName) {
+    return Response.json(
+      { isSet: false, source: 'none' },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
-  const llmManager = LLMManager.getInstance(context?.cloudflare?.env as any);
-  const providerInstance = llmManager.getProvider(provider);
-
-  if (!providerInstance || !providerInstance.config.apiTokenKey) {
-    return Response.json({ isSet: false });
-  }
-
-  const envVarName = providerInstance.config.apiTokenKey;
-
-  // Get API keys from cookie
-  const cookieHeader = request.headers.get('Cookie');
-  const apiKeys = getApiKeysFromCookie(cookieHeader);
-
-  /*
-   * Check API key in order of precedence:
-   * 1. Client-side API keys (from cookies)
-   * 2. Server environment variables (from Cloudflare env)
-   * 3. Process environment variables (from .env.local)
-   * 4. LLMManager environment variables
-   */
-  const envNames = [envVarName, ...(ENV_KEY_ALIASES[envVarName] || [])];
   const cloudflareEnv = context?.cloudflare?.env as Record<string, unknown> | undefined;
-  const hasServerSecret = envNames.some((name) => {
-    const value = cloudflareEnv?.[name] ?? process.env[name] ?? llmManager.env[name];
-    return typeof value === 'string' && value.trim().length > 0;
-  });
-  const isSet = hasServerSecret || Boolean(apiKeys?.[provider]?.trim());
+  const llmManager = LLMManager.getInstance(cloudflareEnv as Record<string, string> | undefined);
+  const provider = llmManager.getProvider(providerName);
 
-  return Response.json({ isSet, source: hasServerSecret ? 'environment' : isSet ? 'user' : 'none' }, {
-    headers: { 'Cache-Control': 'no-store' },
+  if (!provider?.config.apiTokenKey) {
+    return Response.json(
+      { isSet: false, source: 'none' },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const envNames = [provider.config.apiTokenKey, ...(ENV_KEY_ALIASES[provider.config.apiTokenKey] || [])];
+  const hasServerSecret = envNames.some((name) => {
+    const candidates = [cloudflareEnv?.[name], process.env[name], llmManager.env[name]];
+    return candidates.some((value) => typeof value === 'string' && value.trim().length > 0);
   });
+
+  // This endpoint reports server-owned credentials only. Browser cookies are
+  // intentionally excluded so a user's saved key can never masquerade as a
+  // Cloudflare Worker secret in the model selector.
+  return Response.json(
+    { isSet: hasServerSecret, source: hasServerSecret ? 'environment' : 'none' },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 };

@@ -11,7 +11,8 @@ interface APIKeyManagerProps {
   labelForGetApiKey?: string;
 }
 
-// cache which stores whether the provider's API key is set via environment variable
+// Cache only positive server-secret checks, and keep the lifetime short so
+// newly configured Worker secrets are detected without a browser reload.
 const providerEnvKeyStatusCache: Record<string, { isSet: boolean; checkedAt: number }> = {};
 const ENV_STATUS_CACHE_TTL_MS = 15_000;
 
@@ -19,7 +20,6 @@ const apiKeyMemoizeCache: { [k: string]: Record<string, string> } = {};
 
 export function getApiKeysFromCookies() {
   const storedApiKeys = Cookies.get('apiKeys');
-
   let parsedKeys: Record<string, string> = {};
 
   if (storedApiKeys) {
@@ -39,25 +39,25 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
   const [tempKey, setTempKey] = useState(apiKey);
   const [isEnvKeySet, setIsEnvKeySet] = useState(false);
 
-  // Reset states and load saved key when provider changes
   useEffect(() => {
-    // Load saved API key from cookies for this provider
+    const serverManaged = providerEnvKeyStatusCache[provider.name]?.isSet === true;
     const savedKeys = getApiKeysFromCookies();
-    const savedKey = savedKeys[provider.name] || '';
-
+    const savedKey = serverManaged ? '' : savedKeys[provider.name] || '';
     setTempKey(savedKey);
     setApiKey(savedKey);
     setIsEditing(false);
   }, [provider.name]);
 
   const checkEnvApiKey = useCallback(async () => {
-    // Only use a short-lived positive cache. A negative result must be
-    // retried because Worker secrets can be added without a browser reload.
     const cached = providerEnvKeyStatusCache[provider.name];
+
     if (cached?.isSet && Date.now() - cached.checkedAt < ENV_STATUS_CACHE_TTL_MS) {
       setIsEnvKeySet(true);
+      setApiKey('');
+      setTempKey('');
       return;
     }
+
     setIsEnvKeySet(false);
 
     try {
@@ -65,37 +65,47 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
         cache: 'no-store',
         headers: { Accept: 'application/json' },
       });
+
       if (!response.ok) {
         throw new Error(`Environment key check failed (${response.status})`);
       }
-      const data = (await response.json()) as { isSet?: boolean };
-      const isSet = data.isSet === true;
 
-      if (isSet) {
+      const data = (await response.json()) as { isSet?: boolean; source?: string };
+      const isServerManaged = data.isSet === true && data.source === 'environment';
+
+      if (isServerManaged) {
         providerEnvKeyStatusCache[provider.name] = { isSet: true, checkedAt: Date.now() };
+        setIsEnvKeySet(true);
+        setApiKey('');
+        setTempKey('');
+
+        // Remove a stale personal key for this provider so it is not sent
+        // back to the server alongside the Worker-managed credential.
+        const currentKeys = getApiKeysFromCookies();
+
+        if (currentKeys[provider.name]) {
+          const { [provider.name]: _staleKey, ...remainingKeys } = currentKeys;
+          Cookies.set('apiKeys', JSON.stringify(remainingKeys));
+        }
       } else {
         delete providerEnvKeyStatusCache[provider.name];
+        setIsEnvKeySet(false);
       }
-      setIsEnvKeySet(isSet);
     } catch (error) {
       console.error('Failed to check environment API key:', error);
       setIsEnvKeySet(false);
     }
-  }, [provider.name]);
+  }, [provider.name, setApiKey]);
 
   useEffect(() => {
     checkEnvApiKey();
   }, [checkEnvApiKey]);
 
   const handleSave = () => {
-    // Save to parent state
     setApiKey(tempKey);
-
-    // Save to cookies
     const currentKeys = getApiKeysFromCookies();
     const newKeys = { ...currentKeys, [provider.name]: tempKey };
     Cookies.set('apiKeys', JSON.stringify(newKeys));
-
     setIsEditing(false);
   };
 
@@ -106,20 +116,20 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
           <span className="text-sm font-medium text-bolt-elements-textSecondary">{provider?.name} API Key:</span>
           {!isEditing && (
             <div className="flex items-center gap-2">
-              {apiKey ? (
+              {isEnvKeySet ? (
+                <>
+                  <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
+                  <span className="text-xs text-green-500">Managed by server</span>
+                </>
+              ) : apiKey ? (
                 <>
                   <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
                   <span className="text-xs text-green-500">Set via UI</span>
                 </>
-              ) : isEnvKeySet ? (
-                <>
-                  <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
-                  <span className="text-xs text-green-500">Set via environment variable</span>
-                </>
               ) : (
                 <>
                   <div className="i-ph:x-circle-fill text-red-500 w-4 h-4" />
-                  <span className="text-xs text-red-500">Not Set (Please set via UI or ENV_VAR)</span>
+                  <span className="text-xs text-red-500">Not configured</span>
                 </>
               )}
             </div>
