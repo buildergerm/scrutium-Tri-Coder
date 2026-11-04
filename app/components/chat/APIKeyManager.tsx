@@ -11,8 +11,10 @@ interface APIKeyManagerProps {
   labelForGetApiKey?: string;
 }
 
-// Cache only positive server-secret checks, and keep the lifetime short so
-// newly configured Worker secrets are detected without a browser reload.
+/*
+ * Cache only positive server-secret checks, and keep the lifetime short so
+ * newly configured Worker secrets are detected without a browser reload.
+ */
 const providerEnvKeyStatusCache: Record<string, { isSet: boolean; checkedAt: number }> = {};
 const ENV_STATUS_CACHE_TTL_MS = 15_000;
 
@@ -20,27 +22,52 @@ const apiKeyMemoizeCache: { [k: string]: Record<string, string> } = {};
 
 export function getApiKeysFromCookies() {
   const storedApiKeys = Cookies.get('apiKeys');
-  let parsedKeys: Record<string, string> = {};
 
-  if (storedApiKeys) {
-    parsedKeys = apiKeyMemoizeCache[storedApiKeys];
-
-    if (!parsedKeys) {
-      parsedKeys = apiKeyMemoizeCache[storedApiKeys] = JSON.parse(storedApiKeys);
-    }
+  if (!storedApiKeys) {
+    return {};
   }
 
-  return parsedKeys;
+  const cachedKeys = apiKeyMemoizeCache[storedApiKeys];
+
+  if (cachedKeys) {
+    return cachedKeys;
+  }
+
+  try {
+    const parsed = JSON.parse(storedApiKeys) as unknown;
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const parsedKeys: Record<string, string> = {};
+
+    for (const [providerName, key] of Object.entries(parsed)) {
+      if (typeof key === 'string') {
+        parsedKeys[providerName] = key;
+      }
+    }
+
+    apiKeyMemoizeCache[storedApiKeys] = parsedKeys;
+
+    return parsedKeys;
+  } catch {
+    return {};
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, setApiKey }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempKey, setTempKey] = useState(apiKey);
-  const [isEnvKeySet, setIsEnvKeySet] = useState(false);
+  const [envKeyStatus, setEnvKeyStatus] = useState<'checking' | 'configured' | 'missing' | 'error'>('checking');
+  const isEnvKeySet = envKeyStatus === 'configured';
 
   useEffect(() => {
     const serverManaged = providerEnvKeyStatusCache[provider.name]?.isSet === true;
+
+    setEnvKeyStatus('checking');
+
     const savedKeys = getApiKeysFromCookies();
     const savedKey = serverManaged ? '' : savedKeys[provider.name] || '';
     setTempKey(savedKey);
@@ -52,13 +79,14 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
     const cached = providerEnvKeyStatusCache[provider.name];
 
     if (cached?.isSet && Date.now() - cached.checkedAt < ENV_STATUS_CACHE_TTL_MS) {
-      setIsEnvKeySet(true);
+      setEnvKeyStatus('configured');
       setApiKey('');
       setTempKey('');
+
       return;
     }
 
-    setIsEnvKeySet(false);
+    setEnvKeyStatus('checking');
 
     try {
       const response = await fetch(`/api/check-env-key?provider=${encodeURIComponent(provider.name)}`, {
@@ -71,16 +99,23 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
       }
 
       const data = (await response.json()) as { isSet?: boolean; source?: string };
+
+      if (typeof data.isSet !== 'boolean') {
+        throw new Error('Environment key check returned an invalid response.');
+      }
+
       const isServerManaged = data.isSet === true && data.source === 'environment';
 
       if (isServerManaged) {
         providerEnvKeyStatusCache[provider.name] = { isSet: true, checkedAt: Date.now() };
-        setIsEnvKeySet(true);
+        setEnvKeyStatus('configured');
         setApiKey('');
         setTempKey('');
 
-        // Remove a stale personal key for this provider so it is not sent
-        // back to the server alongside the Worker-managed credential.
+        /*
+         * Remove a stale personal key for this provider so it is not sent
+         * back to the server alongside the Worker-managed credential.
+         */
         const currentKeys = getApiKeysFromCookies();
 
         if (currentKeys[provider.name]) {
@@ -89,11 +124,11 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
         }
       } else {
         delete providerEnvKeyStatusCache[provider.name];
-        setIsEnvKeySet(false);
+        setEnvKeyStatus('missing');
       }
     } catch (error) {
       console.error('Failed to check environment API key:', error);
-      setIsEnvKeySet(false);
+      setEnvKeyStatus('error');
     }
   }, [provider.name, setApiKey]);
 
@@ -116,7 +151,9 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
           <span className="text-sm font-medium text-bolt-elements-textSecondary">{provider?.name} API Key:</span>
           {!isEditing && (
             <div className="flex items-center gap-2">
-              {isEnvKeySet ? (
+              {envKeyStatus === 'checking' ? (
+                <span className="text-xs text-bolt-elements-textTertiary">Checking server configuration…</span>
+              ) : isEnvKeySet ? (
                 <>
                   <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
                   <span className="text-xs text-green-500">Managed by server</span>
@@ -126,6 +163,10 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider, apiKey, 
                   <div className="i-ph:check-circle-fill text-green-500 w-4 h-4" />
                   <span className="text-xs text-green-500">Set via UI</span>
                 </>
+              ) : envKeyStatus === 'error' ? (
+                <span className="text-xs text-amber-500" title="The server credential check could not be completed.">
+                  Unable to verify
+                </span>
               ) : (
                 <>
                   <div className="i-ph:x-circle-fill text-red-500 w-4 h-4" />

@@ -7,7 +7,10 @@ import { FirstRunOnboarding } from '~/components/onboarding/FirstRunOnboarding';
 import BackgroundRays from '~/components/ui/BackgroundRays';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Tri-Coder' }, { name: 'description', content: 'Tri-Coder is an AI-powered full-stack development workspace.' }];
+  return [
+    { title: 'Tri-Coder' },
+    { name: 'description', content: 'Tri-Coder is an AI-powered full-stack development workspace.' },
+  ];
 };
 
 export const loader = () => Response.json({});

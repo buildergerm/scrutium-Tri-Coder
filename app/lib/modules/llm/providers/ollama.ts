@@ -80,6 +80,7 @@ export default class OllamaProvider extends BaseProvider {
       defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
       defaultApiTokenKey: 'OLLAMA_API_KEY',
     });
+
     const baseUrl = this._resolveBaseUrl(apiKeys, settings, serverEnv);
 
     try {
@@ -129,6 +130,7 @@ export default class OllamaProvider extends BaseProvider {
     const envRecord = this.convertEnvToRecord(serverEnv);
 
     const settings = providerSettings?.[this.name];
+
     const { apiKey } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: settings,
@@ -136,6 +138,7 @@ export default class OllamaProvider extends BaseProvider {
       defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
       defaultApiTokenKey: 'OLLAMA_API_KEY',
     });
+
     const baseUrl = this._resolveBaseUrl(apiKeys, settings, envRecord);
 
     logger.debug('Ollama Base Url used: ', baseUrl);

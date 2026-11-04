@@ -1,8 +1,10 @@
 import type { LoaderFunction } from 'react-router';
 import { LLMManager } from '~/lib/modules/llm/manager';
 
-// Resolve commonly used provider bindings directly so status detection does
-// not depend on provider registration having completed in the LLM manager.
+/*
+ * Resolve commonly used provider bindings directly so status detection does
+ * not depend on provider registration having completed in the LLM manager.
+ */
 const PROVIDER_API_TOKEN_KEYS: Record<string, string[]> = {
   OpenRouter: ['OPEN_ROUTER_API_KEY', 'OPENROUTER_API_KEY'],
   Google: ['GOOGLE_GENERATIVE_AI_API_KEY', 'GEMINI_API_KEY'],
@@ -21,9 +23,8 @@ export const loader: LoaderFunction = async ({ context, request }) => {
   const cloudflareEnv = context?.cloudflare?.env as unknown as Record<string, unknown> | undefined;
   const llmManager = LLMManager.getInstance(cloudflareEnv as Record<string, string> | undefined);
   const provider = llmManager.getProvider(providerName);
-  const envNames =
-    PROVIDER_API_TOKEN_KEYS[providerName] ??
-    (provider?.config.apiTokenKey ? [provider.config.apiTokenKey] : []);
+
+  const envNames = PROVIDER_API_TOKEN_KEYS[providerName] ?? (provider?.config.apiTokenKey ? [provider.config.apiTokenKey] : []);
 
   if (envNames.length === 0) {
     return Response.json(
@@ -33,6 +34,7 @@ export const loader: LoaderFunction = async ({ context, request }) => {
   }
 
   const runtimeEnv = typeof process !== 'undefined' ? process.env : undefined;
+
   const hasServerSecret = envNames.some((name) => {
     const candidates = [cloudflareEnv?.[name], runtimeEnv?.[name], llmManager.env[name]];
     return candidates.some((value) => typeof value === 'string' && value.trim().length > 0);

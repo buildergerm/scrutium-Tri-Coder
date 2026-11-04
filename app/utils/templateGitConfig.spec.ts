@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loader } from '~/routes/api.github-template';
 import { getTemplates } from './selectStarterTemplate';
+import { loader } from '~/routes/api.github-template';
 
 vi.mock('./constants', () => ({
   STARTER_TEMPLATES: [
@@ -24,6 +24,7 @@ const projectFiles = [
   { name: 'ci.yml', path: '.github/workflows/ci.yml', content: 'name: CI' },
   { name: '.gitkeep', path: '.gitkeep', content: '' },
 ];
+
 const metadataFiles = [
   { name: '.git', path: '.git', content: 'gitdir: /tmp/worktree' },
   { name: 'config', path: '.git/config', content: '[core]' },
