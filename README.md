@@ -150,7 +150,7 @@ LMSTUDIO_BASE_URL=http://127.0.0.1:1234
 ## Contributing & Community
 
 - **Contributing**: Contributions are welcome! Read our [Contributing Guide](CONTRIBUTING.md) and [Project Management Guide](./PROJECT.md) to get started.
-- **Troubleshooting & FAQ**: Common errors and setup fixes are documented in our [FAQ](FAQ.md) and [Project Docs](https://stackblitz-labs.github.io/Tri-Coder/).
+- **Troubleshooting & FAQ**: Common errors and setup fixes are documented in our [FAQ](FAQ.md) and [Project Docs](https://github.com/buildergerm/scrutium-Tri-Coder/tree/main/docs).
 
 
 ---
