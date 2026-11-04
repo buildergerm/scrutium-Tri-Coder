@@ -134,15 +134,20 @@ export function toSafeStreamErrorMessage(error: unknown): string {
   const normalizedMessage = providerMessage.toLowerCase();
 
   const statusCode =
-    typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode :
-    typeof error === 'object' && error !== null && 'status' in error ? error.status : undefined;
+    typeof error === 'object' && error !== null && 'statusCode' in error
+      ? error.statusCode
+      : typeof error === 'object' && error !== null && 'status' in error
+        ? error.status
+        : undefined;
   const errorCode =
     typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
       ? error.code
       : undefined;
 
-  // Log actionable provider metadata without logging messages, headers, URLs,
-  // request bodies, or credentials that may be embedded in SDK errors.
+  /*
+   * Log actionable provider metadata without logging messages, headers, URLs,
+   * request bodies, or credentials that may be embedded in SDK errors.
+   */
   logger.error(
     'Streaming provider error metadata',
     JSON.stringify({
