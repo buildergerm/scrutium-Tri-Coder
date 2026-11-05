@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-Welcome! This guide provides all the details you need to contribute effectively to the project. Thank you for helping us make **bolt.diy** a better tool for developers worldwide. 💡
+Welcome! This guide provides all the details you need to contribute effectively to the project. Thank you for helping us make **Tri Coder** a better tool for developers worldwide. 💡
 
 ---
 
@@ -81,7 +81,7 @@ Interested in maintaining and growing the project? Fill out our [Contributor App
 - Prerequisites: **Node.js >= 22.12.0** and **pnpm >= 9.15.9**.
 - Clone the repository:
   ```bash
-  git clone https://github.com/stackblitz-labs/bolt.diy.git
+  git clone https://github.com/stackblitz-labs/Tri Coder.git
   ```
 - Install dependencies:
   ```bash
