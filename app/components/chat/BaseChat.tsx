@@ -207,8 +207,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           Cookies.remove('apiKeys');
         }
 
-        setIsModelLoading('all');
-
         if (!providerList?.length) {
           setModelList([]);
           setIsModelLoading(undefined);
@@ -217,21 +215,38 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         }
 
         const activeProviderNames = providerList.map((activeProvider) => activeProvider.name).join(',');
+        const controller = new AbortController();
 
-        fetch(`/api/models?providers=${encodeURIComponent(activeProviderNames)}`)
-          .then((response) => response.json())
+        setIsModelLoading('all');
+
+        fetch(`/api/models?providers=${encodeURIComponent(activeProviderNames)}`, { signal: controller.signal })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`Failed to load models (${response.status})`);
+            }
+
+            return response.json();
+          })
           .then((data) => {
             const typedData = data as { modelList: ModelInfo[] };
             setModelList(typedData.modelList);
           })
           .catch((error) => {
+            if (error instanceof Error && error.name === 'AbortError') {
+              return;
+            }
+
             console.error('Error fetching model list:', error);
           })
           .finally(() => {
-            setIsModelLoading(undefined);
+            if (!controller.signal.aborted) {
+              setIsModelLoading(undefined);
+            }
           });
+
+        return () => controller.abort();
       }
-    }, [providerList, provider]);
+    }, [providerList]);
 
     const onApiKeysChange = async (providerName: string, apiKey: string) => {
       const newApiKeys = { ...apiKeys, [providerName]: apiKey };
